@@ -133,6 +133,17 @@ if page == "Realtime Pluvial":
 elif page == "Forecast Pluvial":
     st.title("Forecast Pluvial")
     
+    # Add cumulative rainfall scenario selection here
+    scenario = st.selectbox(
+        "Select a cumulative rainfall scenario:",
+        options=["1h", "3h", "6h", "12h"],
+        index=0
+    )
+    
+    # Set intensities based on the selected scenario
+    radar_intensity = 1.0 + 0.5 * ["1h", "3h", "6h", "12h"].index(scenario)
+    flood_intensity = 0.5 + 0.3 * ["1h", "3h", "6h", "12h"].index(scenario)
+
     col1, col2, col3 = st.columns([1, 2, 2])
     with col1:
         selected_date = create_date_slider(datetime.now(), datetime.now() + timedelta(hours=48))
@@ -140,7 +151,7 @@ elif page == "Forecast Pluvial":
         selected_point_id = int(point_selection.split()[1])
         
     with col2:
-        create_map_viewer("COSMO Forecast Rainfall", radar_intensity=2.0, flood_name="Flood Simulation", flood_intensity=1.0)
+        create_map_viewer("COSMO Forecast Rainfall", radar_intensity, "Flood Simulation", flood_intensity)
         
     with col3:
         create_time_series(selected_date, selected_point_id)
@@ -163,5 +174,4 @@ elif page == "Coastal Flooding Forecast":
 elif page == "Coastal NowCasting":
     st.title("Coastal NowCasting")
     st.write("This page is under development.")
-
 
