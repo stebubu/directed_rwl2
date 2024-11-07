@@ -15,6 +15,13 @@ st.set_page_config(
     layout="wide"
 )
 
+# Center of Rimini, Italy
+center_lat, center_lon = 44.0633, 12.5808
+bounds = [[center_lat - 0.09, center_lon - 0.09], [center_lat + 0.09, center_lon + 0.09]]
+
+# Generate static random points in Rimini area
+random_points = [(center_lat + random.uniform(-0.09, 0.09), center_lon + random.uniform(-0.09, 0.09)) for _ in range(5)]
+
 # Function to create date slider
 def create_date_slider():
     start_date = datetime(2020, 1, 1)
@@ -36,57 +43,59 @@ def create_date_slider():
 def generate_random_geotiff_data(shape=(100, 100)):
     return np.random.random(shape)
 
-# Function to create map viewer with random GeoTIFF data and Google Satellite background, centered on Rimini, Italy
-def create_map_viewer():
-    st.subheader("Radar Rainfall Intensity Overlay")
-    
-    # Center the map on Rimini, Italy
-    center_lat, center_lon = 44.0633, 12.5808
-    bounds = [[center_lat - 0.09, center_lon - 0.09], [center_lat + 0.09, center_lon + 0.09]]
+# Function to create map viewer with Radar and Flood layers
+def create_map_viewer(selected_point=None):
+    st.subheader("Radar Rainfall Intensity and Flood Area Overlay")
     
     # Set map to Google Satellite centered on Rimini
     m = folium.Map(
         location=[center_lat, center_lon],
-        zoom_start=13,  # Adjusted zoom for 10 km radius
+        zoom_start=13,
         tiles="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
         attr="Google"
     )
     
-    # Generate random rainfall intensity data for demonstration purposes
-    data = generate_random_geotiff_data(shape=(100, 100))
-    
-    # Overlay random rainfall intensity raster, constrained to 10 km radius bounds
+    # Overlay Radar Rainfall Intensity
+    radar_data = generate_random_geotiff_data(shape=(100, 100))
     folium.raster_layers.ImageOverlay(
-        data,
+        radar_data,
         bounds=bounds,
         colormap=lambda x: (0, 0, 1, x),  # blue color for rainfall intensity
-        name="Rainfall Intensity"
+        name="Radar Rainfall Intensity"
     ).add_to(m)
-
-    # Adding random points within the 10 km radius for demonstration
-    for _ in range(5):  # Adding five random points within 10 km radius
-        lat_offset, lon_offset = random.uniform(-0.09, 0.09), random.uniform(-0.09, 0.09)
-        folium.Marker([center_lat + lat_offset, center_lon + lon_offset], 
-                      popup=f"Point at {center_lat + lat_offset:.2f}, {center_lon + lon_offset:.2f}"
-                     ).add_to(m)
     
-    # Button to add flood overlay
+    # Optional: Add Flood Overlay if button is clicked
     if st.button("Generate Flood Area Overlay"):
         flood_data = generate_random_geotiff_data(shape=(100, 100))  # Random flood data
         folium.raster_layers.ImageOverlay(
             flood_data,
             bounds=bounds,
-            colormap=lambda x: (0, 0, 1, x),  # different colormap for flood (water depth)
+            colormap=lambda x: (1, 0, 0, x),  # red color for flood (water depth)
             name="Flood Area"
         ).add_to(m)
+    
+    # Add random static points and make them interactive
+    for i, (lat, lon) in enumerate(random_points):
+        popup = folium.Popup(f"Point {i+1}", parse_html=True)
+        marker = folium.Marker(
+            location=[lat, lon],
+            popup=popup,
+            tooltip="Click to see time series"
+        )
+        marker.add_to(m)
+        
+        # Check if the selected point matches the clicked one
+        if selected_point == (lat, lon):
+            st.write(f"Time Series Data for Point {i+1}")
+            create_time_series(selected_date, point_id=i+1)
 
     folium.LayerControl().add_to(m)
     folium_static(m)
 
-# Function to create time series plot for a point
-def create_time_series(selected_date):
+# Function to create time series plot for a specific point
+def create_time_series(selected_date, point_id):
     dates = pd.date_range(start=selected_date - timedelta(days=30), end=selected_date, freq='D')
-    values = np.random.normal(0, 1, size=len(dates))
+    values = np.random.normal(0, 1, size=len(dates)) + point_id  # Vary values slightly by point
     df = pd.DataFrame({
         'Date': dates,
         'Value': values
@@ -96,7 +105,7 @@ def create_time_series(selected_date):
         df,
         x='Date',
         y='Value',
-        title='Time Series Data for Selected Point'
+        title=f'Time Series Data for Point {point_id}'
     )
 
     fig.update_layout(
@@ -124,50 +133,22 @@ if page == "Realtime Pluvial":
         
     with col2:
         st.subheader("Map View")
-        create_map_viewer()
+        
+        # Retrieve clicked point from session state, if available
+        if 'clicked_point' not in st.session_state:
+            st.session_state['clicked_point'] = None
+        
+        # Display map viewer with interactive points
+        create_map_viewer(selected_point=st.session_state['clicked_point'])
         
     with col3:
         st.subheader("Time Series")
-        create_time_series(selected_date)
+        if st.session_state['clicked_point']:
+            lat, lon = st.session_state['clicked_point']
+            for i, point in enumerate(random_points):
+                if point == (lat, lon):
+                    create_time_series(selected_date, point_id=i+1)
+                    break
+        else:
+            st.write("Click a point on the map to view its time series.")
 
-elif page == "Analysis 1":
-    st.title("Analysis 1")
-    
-    tab1, tab2, tab3 = st.tabs(["Date Selection", "Map View", "Time Series"])
-    
-    with tab1:
-        selected_date = create_date_slider()
-    
-    with tab2:
-        create_map_viewer()
-    
-    with tab3:
-        create_time_series(selected_date)
-
-elif page == "Analysis 2":
-    st.title("Analysis 2")
-    
-    st.subheader("1. Select Date")
-    selected_date = create_date_slider()
-    
-    st.subheader("2. Geospatial View")
-    create_map_viewer()
-    
-    st.subheader("3. Temporal Analysis")
-    create_time_series(selected_date)
-
-elif page == "Analysis 3":
-    st.title("Analysis 3")
-    
-    col1, col2 = st.columns([1, 2])
-    
-    with col1:
-        st.subheader("Date Selection")
-        selected_date = create_date_slider()
-        
-        st.subheader("Time Series")
-        create_time_series(selected_date)
-    
-    with col2:
-        st.subheader("Map View")
-        create_map_viewer()
