@@ -38,12 +38,12 @@ def create_date_slider():
     )
     return selected_date
 
-# Function to generate random GeoTIFF-like data
-def generate_random_geotiff_data(shape=(100, 100)):
-    return np.random.random(shape)
+# Function to generate random GeoTIFF-like data based on scenario
+def generate_random_geotiff_data(shape=(100, 100), intensity=1.0):
+    return np.random.random(shape) * intensity
 
-# Function to create map viewer with Radar and Flood layers
-def create_map_viewer():
+# Function to create map viewer with Radar and Flood layers based on scenario
+def create_map_viewer(radar_intensity, flood_intensity):
     st.subheader("Radar Rainfall Intensity and Flood Area Overlay")
     
     # Set map to Google Satellite centered on Rimini
@@ -54,8 +54,8 @@ def create_map_viewer():
         attr="Google"
     )
     
-    # Overlay Radar Rainfall Intensity
-    radar_data = generate_random_geotiff_data(shape=(100, 100))
+    # Overlay Radar Rainfall Intensity with scenario intensity
+    radar_data = generate_random_geotiff_data(shape=(100, 100), intensity=radar_intensity)
     folium.raster_layers.ImageOverlay(
         radar_data,
         bounds=bounds,
@@ -63,9 +63,9 @@ def create_map_viewer():
         name="Radar Rainfall Intensity"
     ).add_to(m)
     
-    # Optional: Add Flood Overlay if button is clicked
+    # Optional: Add Flood Overlay if button is clicked, with scenario intensity
     if st.button("Generate Flood Area Overlay"):
-        flood_data = generate_random_geotiff_data(shape=(100, 100))  # Random flood data
+        flood_data = generate_random_geotiff_data(shape=(100, 100), intensity=flood_intensity)
         folium.raster_layers.ImageOverlay(
             flood_data,
             bounds=bounds,
@@ -116,6 +116,27 @@ if page == "Realtime Pluvial":
     st.title("Realtime Pluvial Dashboard")
     st.write("Select different pages from the sidebar to view different analyses.")
     
+    # Simulation scenario selection
+    scenario = st.selectbox(
+        "Select a cumulative rainfall scenario:",
+        options=["1h", "3h", "6h", "12h"],
+        index=0
+    )
+    
+    # Set intensities based on the selected scenario
+    if scenario == "1h":
+        radar_intensity = 1.0
+        flood_intensity = 0.5
+    elif scenario == "3h":
+        radar_intensity = 1.5
+        flood_intensity = 0.8
+    elif scenario == "6h":
+        radar_intensity = 2.0
+        flood_intensity = 1.0
+    elif scenario == "12h":
+        radar_intensity = 2.5
+        flood_intensity = 1.2
+
     # Create three columns for the components
     col1, col2, col3 = st.columns([1, 2, 2])
     
@@ -133,10 +154,11 @@ if page == "Realtime Pluvial":
         
     with col2:
         st.subheader("Map View")
-        create_map_viewer()
+        create_map_viewer(radar_intensity, flood_intensity)
         
     with col3:
         st.subheader("Time Series")
         create_time_series(selected_date, selected_point_id)
+
 
 
