@@ -36,23 +36,26 @@ def create_date_slider():
 def generate_random_geotiff_data(shape=(100, 100)):
     return np.random.random(shape)
 
-# Function to create map viewer with random GeoTIFF data and Google Satellite background
+# Function to create map viewer with random GeoTIFF data and Google Satellite background, centered on Rimini, Italy
 def create_map_viewer():
     st.subheader("Radar Rainfall Intensity Overlay")
     
-    # Generate random rainfall intensity data
-    data = generate_random_geotiff_data()
-    bounds = [[-90, -180], [90, 180]]  # Example global bounds for demo purposes
+    # Center the map on Rimini, Italy
+    center_lat, center_lon = 44.0633, 12.5808
+    bounds = [[center_lat - 0.09, center_lon - 0.09], [center_lat + 0.09, center_lon + 0.09]]
     
-    # Set map to Google Satellite
+    # Set map to Google Satellite centered on Rimini
     m = folium.Map(
-        location=[0, 0],
-        zoom_start=2,
+        location=[center_lat, center_lon],
+        zoom_start=13,  # Adjusted zoom for 10 km radius
         tiles="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
         attr="Google"
     )
     
-    # Overlay random rainfall intensity raster
+    # Generate random rainfall intensity data for demonstration purposes
+    data = generate_random_geotiff_data(shape=(100, 100))
+    
+    # Overlay random rainfall intensity raster, constrained to 10 km radius bounds
     folium.raster_layers.ImageOverlay(
         data,
         bounds=bounds,
@@ -60,14 +63,16 @@ def create_map_viewer():
         name="Rainfall Intensity"
     ).add_to(m)
 
-    # Adding random points to the map
-    for _ in range(5):  # Adding five random points for demonstration
-        lat, lon = random.uniform(-90, 90), random.uniform(-180, 180)
-        folium.Marker([lat, lon], popup=f"Point at {lat:.2f}, {lon:.2f}").add_to(m)
+    # Adding random points within the 10 km radius for demonstration
+    for _ in range(5):  # Adding five random points within 10 km radius
+        lat_offset, lon_offset = random.uniform(-0.09, 0.09), random.uniform(-0.09, 0.09)
+        folium.Marker([center_lat + lat_offset, center_lon + lon_offset], 
+                      popup=f"Point at {center_lat + lat_offset:.2f}, {center_lon + lon_offset:.2f}"
+                     ).add_to(m)
     
     # Button to add flood overlay
     if st.button("Generate Flood Area Overlay"):
-        flood_data = generate_random_geotiff_data()  # Random flood data
+        flood_data = generate_random_geotiff_data(shape=(100, 100))  # Random flood data
         folium.raster_layers.ImageOverlay(
             flood_data,
             bounds=bounds,
