@@ -2,7 +2,6 @@
 import streamlit as st
 import folium
 from streamlit_folium import folium_static
-import rasterio
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -44,7 +43,7 @@ def generate_random_geotiff_data(shape=(100, 100)):
     return np.random.random(shape)
 
 # Function to create map viewer with Radar and Flood layers
-def create_map_viewer(selected_point=None):
+def create_map_viewer():
     st.subheader("Radar Rainfall Intensity and Flood Area Overlay")
     
     # Set map to Google Satellite centered on Rimini
@@ -74,20 +73,13 @@ def create_map_viewer(selected_point=None):
             name="Flood Area"
         ).add_to(m)
     
-    # Add random static points and make them interactive
+    # Add static random points to the map with labels
     for i, (lat, lon) in enumerate(random_points):
-        popup = folium.Popup(f"Point {i+1}", parse_html=True)
-        marker = folium.Marker(
+        folium.Marker(
             location=[lat, lon],
-            popup=popup,
-            tooltip="Click to see time series"
-        )
-        marker.add_to(m)
-        
-        # Check if the selected point matches the clicked one
-        if selected_point == (lat, lon):
-            st.write(f"Time Series Data for Point {i+1}")
-            create_time_series(selected_date, point_id=i+1)
+            popup=f"Point {i+1}",
+            tooltip="Click to select"
+        ).add_to(m)
 
     folium.LayerControl().add_to(m)
     folium_static(m)
@@ -131,24 +123,20 @@ if page == "Realtime Pluvial":
         st.subheader("Date Selection")
         selected_date = create_date_slider()
         
+        # Dropdown to select point for time series
+        point_selection = st.selectbox(
+            "Select a point to view time series:",
+            options=[f"Point {i+1}" for i in range(len(random_points))],
+            index=0
+        )
+        selected_point_id = int(point_selection.split()[1])  # Extract point ID from dropdown text
+        
     with col2:
         st.subheader("Map View")
-        
-        # Retrieve clicked point from session state, if available
-        if 'clicked_point' not in st.session_state:
-            st.session_state['clicked_point'] = None
-        
-        # Display map viewer with interactive points
-        create_map_viewer(selected_point=st.session_state['clicked_point'])
+        create_map_viewer()
         
     with col3:
         st.subheader("Time Series")
-        if st.session_state['clicked_point']:
-            lat, lon = st.session_state['clicked_point']
-            for i, point in enumerate(random_points):
-                if point == (lat, lon):
-                    create_time_series(selected_date, point_id=i+1)
-                    break
-        else:
-            st.write("Click a point on the map to view its time series.")
+        create_time_series(selected_date, selected_point_id)
+
 
