@@ -21,20 +21,13 @@ bounds = [[center_lat - 0.09, center_lon - 0.09], [center_lat + 0.09, center_lon
 # Generate static random points in Rimini area
 random_points = [(center_lat + random.uniform(-0.09, 0.09), center_lon + random.uniform(-0.09, 0.09)) for _ in range(5)]
 
-# Function to create date slider
-def create_date_slider():
-    start_date = datetime(2020, 1, 1)
-    end_date = datetime(2024, 12, 31)
-    dates = []
-    current_date = start_date
-    while current_date <= end_date:
-        dates.append(current_date)
-        current_date += timedelta(days=1)
-    
+# Function to create a date slider with specific ranges
+def create_date_slider(start, end):
+    dates = pd.date_range(start=start, end=end, freq='H')
     selected_date = st.select_slider(
-        "Select a date",
+        "Select a forecast time",
         options=dates,
-        format_func=lambda x: x.strftime("%Y-%m-%d")
+        format_func=lambda x: x.strftime("%Y-%m-%d %H:%M")
     )
     return selected_date
 
@@ -42,9 +35,9 @@ def create_date_slider():
 def generate_random_geotiff_data(shape=(100, 100), intensity=1.0):
     return np.random.random(shape) * intensity
 
-# Function to create map viewer with Radar and Flood layers based on scenario
-def create_map_viewer(radar_intensity, flood_intensity):
-    st.subheader("Radar Rainfall Intensity and Flood Area Overlay")
+# Function to create map viewer with dynamic component names
+def create_map_viewer(radar_name, radar_intensity, flood_name, flood_intensity):
+    st.subheader(f"{radar_name} and {flood_name} Overlay")
     
     # Set map to Google Satellite centered on Rimini
     m = folium.Map(
@@ -54,23 +47,23 @@ def create_map_viewer(radar_intensity, flood_intensity):
         attr="Google"
     )
     
-    # Overlay Radar Rainfall Intensity with scenario intensity
+    # Overlay radar with specified name and intensity
     radar_data = generate_random_geotiff_data(shape=(100, 100), intensity=radar_intensity)
     folium.raster_layers.ImageOverlay(
         radar_data,
         bounds=bounds,
-        colormap=lambda x: (0, 0, 1, x),  # blue color for rainfall intensity
-        name="Radar Rainfall Intensity"
+        colormap=lambda x: (0, 0, 1, x),
+        name=radar_name
     ).add_to(m)
     
-    # Optional: Add Flood Overlay if button is clicked, with scenario intensity
-    if st.button("Generate Flood Area Overlay"):
+    # Optional: Add flood overlay with specified name and intensity if button is clicked
+    if st.button(f"Generate {flood_name} Overlay"):
         flood_data = generate_random_geotiff_data(shape=(100, 100), intensity=flood_intensity)
         folium.raster_layers.ImageOverlay(
             flood_data,
             bounds=bounds,
-            colormap=lambda x: (1, 0, 0, x),  # red color for flood (water depth)
-            name="Flood Area"
+            colormap=lambda x: (1, 0, 0, x),
+            name=flood_name
         ).add_to(m)
     
     # Add static random points to the map with labels
@@ -86,7 +79,7 @@ def create_map_viewer(radar_intensity, flood_intensity):
 
 # Function to create time series plot for a specific point
 def create_time_series(selected_date, point_id):
-    dates = pd.date_range(start=selected_date - timedelta(days=30), end=selected_date, freq='D')
+    dates = pd.date_range(start=selected_date - timedelta(days=2), end=selected_date, freq='H')
     values = np.random.normal(0, 1, size=len(dates)) + point_id  # Vary values slightly by point
     df = pd.DataFrame({
         'Date': dates,
@@ -110,13 +103,11 @@ def create_time_series(selected_date, point_id):
 
 # Main navigation
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Select a page:", ["Realtime Pluvial", "Analysis 1", "Analysis 2", "Analysis 3"])
+page = st.sidebar.radio("Select a page:", ["Realtime Pluvial", "Forecast Pluvial", "Coastal Flooding Forecast", "Coastal NowCasting"])
 
 if page == "Realtime Pluvial":
     st.title("Realtime Pluvial Dashboard")
-    st.write("Select different pages from the sidebar to view different analyses.")
     
-    # Simulation scenario selection
     scenario = st.selectbox(
         "Select a cumulative rainfall scenario:",
         options=["1h", "3h", "6h", "12h"],
@@ -124,41 +115,53 @@ if page == "Realtime Pluvial":
     )
     
     # Set intensities based on the selected scenario
-    if scenario == "1h":
-        radar_intensity = 1.0
-        flood_intensity = 0.5
-    elif scenario == "3h":
-        radar_intensity = 1.5
-        flood_intensity = 0.8
-    elif scenario == "6h":
-        radar_intensity = 2.0
-        flood_intensity = 1.0
-    elif scenario == "12h":
-        radar_intensity = 2.5
-        flood_intensity = 1.2
+    radar_intensity = 1.0 + 0.5 * ["1h", "3h", "6h", "12h"].index(scenario)
+    flood_intensity = 0.5 + 0.3 * ["1h", "3h", "6h", "12h"].index(scenario)
 
-    # Create three columns for the components
     col1, col2, col3 = st.columns([1, 2, 2])
-    
     with col1:
-        st.subheader("Date Selection")
-        selected_date = create_date_slider()
-        
-        # Dropdown to select point for time series
-        point_selection = st.selectbox(
-            "Select a point to view time series:",
-            options=[f"Point {i+1}" for i in range(len(random_points))],
-            index=0
-        )
-        selected_point_id = int(point_selection.split()[1])  # Extract point ID from dropdown text
+        selected_date = create_date_slider(datetime(2020, 1, 1), datetime(2024, 12, 31))
+        point_selection = st.selectbox("Select a point to view time series:", [f"Point {i+1}" for i in range(len(random_points))], index=0)
+        selected_point_id = int(point_selection.split()[1])
         
     with col2:
-        st.subheader("Map View")
-        create_map_viewer(radar_intensity, flood_intensity)
+        create_map_viewer("Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity)
         
     with col3:
-        st.subheader("Time Series")
         create_time_series(selected_date, selected_point_id)
 
+elif page == "Forecast Pluvial":
+    st.title("Forecast Pluvial")
+    
+    col1, col2, col3 = st.columns([1, 2, 2])
+    with col1:
+        selected_date = create_date_slider(datetime.now(), datetime.now() + timedelta(hours=48))
+        point_selection = st.selectbox("Select a point to view time series:", [f"Point {i+1}" for i in range(len(random_points))], index=0)
+        selected_point_id = int(point_selection.split()[1])
+        
+    with col2:
+        create_map_viewer("COSMO Forecast Rainfall", radar_intensity=2.0, flood_name="Flood Simulation", flood_intensity=1.0)
+        
+    with col3:
+        create_time_series(selected_date, selected_point_id)
+
+elif page == "Coastal Flooding Forecast":
+    st.title("Coastal Flooding Forecast")
+    
+    col1, col2, col3 = st.columns([1, 2, 2])
+    with col1:
+        selected_date = create_date_slider(datetime.now(), datetime.now() + timedelta(hours=48))
+        point_selection = st.selectbox("Select a point to view time series:", [f"Point {i+1}" for i in range(len(random_points))], index=0)
+        selected_point_id = int(point_selection.split()[1])
+        
+    with col2:
+        create_map_viewer("SEA Model Forecast", radar_intensity=2.0, flood_name="Coastal Flood Simulation", flood_intensity=1.2)
+        
+    with col3:
+        create_time_series(selected_date, selected_point_id)
+
+elif page == "Coastal NowCasting":
+    st.title("Coastal NowCasting")
+    st.write("This page is under development.")
 
 
