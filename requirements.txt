@@ -22,3 +22,4 @@ leafmap
 rio-cogeo
 mapboxgl
 setuptools
+boto3
