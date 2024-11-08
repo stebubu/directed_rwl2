@@ -32,6 +32,110 @@ bounds = [[center_lat - 0.09, center_lon - 0.09], [center_lat + 0.09, center_lon
 # Generate static random points in Rimini area
 random_points = [(center_lat + random.uniform(-0.09, 0.09), center_lon + random.uniform(-0.09, 0.09)) for _ in range(5)]
 
+
+# AWS Credentials Input
+st.sidebar.title("AWS Credentials")
+aws_access_key_id = st.sidebar.text_input("AWS Access Key ID", type="password")
+aws_secret_access_key = st.sidebar.text_input("AWS Secret Access Key", type="password")
+aws_region = st.sidebar.text_input("AWS Region", value="us-east-1")
+
+# Function to upload a file to S3
+def s3_upload(local_file, s3_file, bucket_name="s3-directed"):
+    session = boto3.Session(
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        region_name=aws_region
+    )
+    s3 = session.client("s3")
+    try:
+        s3.upload_file(local_file, bucket_name, s3_file)
+        st.success(f"Uploaded {local_file} to {s3_file}")
+    except Exception as e:
+        st.error(f"Failed to upload to S3: {e}")
+
+# Flood map generation function
+def generate_flood_map(geotiff_path):
+    # Define S3 paths
+    s3_file = "Directed/Rimini/rain_radar_hera.tif"
+    s3_bucket = "s3-directed"
+    s3_path = f"s3://{s3_bucket}/{s3_file}"
+
+    # Upload the file to S3
+    s3_upload(geotiff_path, s3_file)
+
+    # Define process request parameters
+    url = "http://pygeoapi-saferplaces-lb-409838694.us-east-1.elb.amazonaws.com/processes/safer-rain-process/execution"
+    dem_file = "s3://saferplaces.co/Directed/Rimini/dtm_cropped_32633.bld.tif"
+    output_file = "s3://saferplaces.co/Directed/Rimini/wd_rain_radar_hera.tif"
+    rain_file = s3_path
+
+    body = {
+        "inputs": {
+            "dem": dem_file,
+            "rain": rain_file,
+            "water": output_file,
+            "overwrite": True,
+            "sync": True,
+            "debug": True,
+        }
+    }
+
+    # Make the API request
+    response = requests.post(url, json=body)
+    if response.status_code == 200:
+        st.write("Flood map generated successfully.")
+    else:
+        st.error(f"Flood map generation failed: {response.text}")
+        return None
+
+    # Download the generated file from S3
+    download_url = output_file.replace("s3://", "https://s3.amazonaws.com/")
+    output_local_path = os.path.basename(download_url)
+
+    try:
+        response = requests.get(download_url)
+        if response.status_code == 200:
+            with open(output_local_path, "wb") as f:
+                f.write(response.content)
+            st.success("Downloaded flood map successfully.")
+            return output_local_path
+        else:
+            st.error(f"Failed to download flood map: {response.status_code}")
+            return None
+    except Exception as e:
+        st.error(f"Error downloading file: {e}")
+        return None
+
+# Function to display the flood map with Folium
+def display_flood_map(flood_map_path):
+    try:
+        with rasterio.open(flood_map_path) as src:
+            bounds = src.bounds
+            flood_data = src.read(1)
+            vmin, vmax = flood_data.min(), flood_data.max()
+
+            norm = colors.Normalize(vmin=vmin, vmax=vmax)
+            cmap = cm.get_cmap('Blues')
+            rgba_image = cmap(norm(flood_data))
+            rgba_image[flood_data == 0] = [0, 0, 0, 0]
+
+            m = folium.Map(location=[(bounds.bottom + bounds.top) / 2, (bounds.left + bounds.right) / 2], zoom_start=10)
+            folium.raster_layers.ImageOverlay(
+                image=rgba_image,
+                bounds=[[bounds.bottom, bounds.left], [bounds.top, bounds.right]],
+                opacity=0.7
+            ).add_to(m)
+
+            colormap = linear.Blues_09.scale(vmin, vmax)
+            colormap.caption = 'Flood Depth'
+            colormap.add_to(m)
+
+            folium_static(m)
+    except Exception as e:
+        st.error(f"Error displaying flood map: {e}")
+
+
+
 # Function to create a date slider with specific ranges
 def create_date_slider(start, end):
     dates = pd.date_range(start=start, end=end, freq='H')
@@ -302,6 +406,12 @@ if page == "Realtime Pluvial":
             st.download_button("Download COG", file, "rainrate_cog.tif", "image/tiff")
     else:
         st.error("Failed to create GeoTIFF.")
+    # Generate flood map button
+    if st.button("Generate Flood Map"):
+        geotiff_path = "/path/to/local/geotiff.tif"  # Replace with actual path or use generated geotiff from previous steps
+        flood_map_path = generate_flood_map(geotiff_path)
+        if flood_map_path:
+            display_flood_map(flood_map_path)
     
     scenario = st.selectbox(
         "Select a cumulative rainfall scenario:",
