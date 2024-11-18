@@ -54,6 +54,67 @@ def s3_upload(local_file, s3_file, bucket_name="s3-directed"):
     except Exception as e:
         st.error(f"Failed to upload to S3: {e}")
 
+# New function to generate rainfall map based on selected modality
+def generate_rainfall_map(modality, start_time, end_time):
+    st.write(f"Generating rainfall intensity map using {modality} method...")
+    
+    # Simulate data generation based on modality
+    data = np.random.random((100, 100)) * 10  # Simulated rainfall intensity in mm
+    lat_min, lat_max = 43.8, 44.2
+    lon_min, lon_max = 12.4, 12.9
+    cell_size_lon = (lon_max - lon_min) / data.shape[1]
+    cell_size_lat = (lat_max - lat_min) / data.shape[0]
+
+    # Create a temporary GeoTIFF file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".tif") as tmp_file:
+        transform = from_origin(lon_min, lat_max, cell_size_lon, abs(cell_size_lat))
+        with rasterio.open(
+            tmp_file.name,
+            'w',
+            driver='GTiff',
+            height=data.shape[0],
+            width=data.shape[1],
+            count=1,
+            dtype=rasterio.float32,
+            crs='EPSG:4326',
+            transform=transform
+        ) as dst:
+            dst.write(data.astype(rasterio.float32), 1)
+        geotiff_path = tmp_file.name
+        st.success(f"Rainfall intensity map generated: {geotiff_path}")
+        return geotiff_path
+
+# Function to display the generated rainfall map using Folium
+def display_rainfall_map(geotiff_path):
+    try:
+        with rasterio.open(geotiff_path) as src:
+            bounds = src.bounds
+            rainfall_data = src.read(1)
+            vmin, vmax = rainfall_data.min(), rainfall_data.max()
+
+            norm = colors.Normalize(vmin=vmin, vmax=vmax)
+            cmap = cm.get_cmap('Blues')
+            rgba_image = cmap(norm(rainfall_data))
+            rgba_image[rainfall_data == 0] = [0, 0, 0, 0]
+
+            m = folium.Map(location=[(bounds.bottom + bounds.top) / 2, (bounds.left + bounds.right) / 2], zoom_start=10)
+            folium.raster_layers.ImageOverlay(
+                image=rgba_image,
+                bounds=[[bounds.bottom, bounds.left], [bounds.top, bounds.right]],
+                opacity=0.7
+            ).add_to(m)
+
+            colormap = linear.Blues_09.scale(vmin, vmax)
+            colormap.caption = 'Rainfall Intensity (mm)'
+            colormap.add_to(m)
+
+            folium_static(m)
+    except Exception as e:
+        st.error(f"Error displaying rainfall map: {e}")
+
+
+
+
 # Flood map generation function
 def generate_flood_map(geotiff_path):
     # Define S3 paths
@@ -442,9 +503,20 @@ if page == "Realtime Pluvial":
     end_time = selected_time
     start_time = end_time - cumulative_options[cumulative_interval]
 
+    # Rainfall generation modality selection
+    st.sidebar.subheader("Rainfall Intensity Generation Method")
+    modalities = ["HERA", "ARPAE", "INTERP"]
+    selected_modality = st.sidebar.radio("Select modality:", modalities)
+
+    # Button to generate rainfall map
+    if st.sidebar.button("Generate Rainfall Map"):
+        geotiff_path = generate_rainfall_map(selected_modality, start_time, end_time)
+        if geotiff_path:
+            display_rainfall_map(geotiff_path)
+    
     # Fetch rain data
-    rain_data = fetch_acc_rain_data(start_time, end_time)
-    geotiff_path = convert_accumulated_rain_to_geotiff(rain_data)
+    #rain_data = fetch_acc_rain_data(start_time, end_time)
+    #geotiff_path = convert_accumulated_rain_to_geotiff(rain_data)
     if geotiff_path:
         cog_path = convert_to_cog(geotiff_path)
         display_cog_with_folium(cog_path)
