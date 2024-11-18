@@ -207,7 +207,7 @@ def create_map_viewer_with_barrier(radar_name, radar_intensity, flood_name, floo
     folium_static(m)
 
 # Function to create time series plot for a specific point
-def create_time_series(selected_date, point_id):
+'''def create_time_series(selected_date, point_id):
     dates = pd.date_range(start=selected_date - timedelta(days=2), end=selected_date, freq='H')
     values = np.random.normal(0, 1, size=len(dates)) + point_id  # Vary values slightly by point
     df = pd.DataFrame({
@@ -228,7 +228,52 @@ def create_time_series(selected_date, point_id):
         hovermode='x unified'
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)'''
+
+
+def create_time_series(selected_date, point_id):
+    # Generate data for the selected date with 15-minute intervals
+    dates = pd.date_range(start=selected_date, end=selected_date + timedelta(days=1), freq='15T')
+    values = np.random.uniform(0, 10, size=len(dates))  # Random rainfall intensity in mm
+    df = pd.DataFrame({
+        'Date': dates,
+        'Rainfall Intensity (mm)': values
+    })
+
+    # Calculate cumulative rainfall
+    df['Cumulative Rainfall (mm)'] = df['Rainfall Intensity (mm)'].cumsum()
+
+    # Create the plot
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Plot histogram (bar chart) on the primary y-axis
+    ax1.bar(df['Date'], df['Rainfall Intensity (mm)'], width=0.01, color='blue', label='Rainfall Intensity (mm)')
+    ax1.set_xlabel('Time')
+    ax1.set_ylabel('Rainfall Intensity (mm)', color='blue')
+    ax1.tick_params(axis='y', labelcolor='blue')
+
+    # Format x-axis for better readability
+    ax1.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%H:%M'))
+    ax1.xaxis.set_major_locator(plt.matplotlib.dates.HourLocator(interval=1))
+    plt.xticks(rotation=45)
+
+    # Plot cumulative rainfall on the secondary y-axis
+    ax2 = ax1.twinx()
+    ax2.plot(df['Date'], df['Cumulative Rainfall (mm)'], color='red', label='Cumulative Rainfall (mm)', linewidth=2)
+    ax2.set_ylabel('Cumulative Rainfall (mm)', color='red')
+    ax2.tick_params(axis='y', labelcolor='red')
+
+    # Add a legend
+    fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.9), bbox_transform=ax1.transAxes)
+
+    # Set title
+    plt.title(f"Rainfall Intensity and Cumulative Rainfall for Point {point_id}")
+
+    # Show plot in Streamlit
+    st.pyplot(fig)
+
+
+
 # Authentication and request parameters
 auth_url = "https://api.hypermeteo.com/auth-b2b/authenticate"
 body = {
