@@ -488,6 +488,9 @@ page = st.sidebar.radio("Select a page:", ["Realtime Pluvial", "Forecast Pluvial
 
 if page == "Realtime Pluvial":
     st.title("Realtime Pluvial Dashboard")
+
+    # Initialize geotiff_path
+    geotiff_path = None
         # Time selection and fetch rain data
     selected_date = st.sidebar.date_input("Select date", datetime.utcnow().date())
     selected_hour = st.sidebar.selectbox("Select hour (UTC)", options=range(24), index=datetime.utcnow().hour)
