@@ -18,6 +18,7 @@ import xarray as xr
 import pytz
 from branca.colormap import linear
 from matplotlib import cm, colors
+import matplotlib.pyplot as plt
 
 st.set_page_config(
     page_title="Geospatial Analysis Dashboard",
