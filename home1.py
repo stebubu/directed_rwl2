@@ -111,7 +111,6 @@ def display_rainfall_map(geotiff_path):
             colormap = linear.Blues_09.scale(vmin, vmax)
             colormap.caption = 'Rainfall Intensity (mm)'
             colormap.add_to(m)
-
             st_folium(m)
     except Exception as e:
         st.error(f"Error displaying rainfall map: {e}")
@@ -195,8 +194,7 @@ def display_flood_map(flood_map_path):
             colormap = linear.Blues_09.scale(vmin, vmax)
             colormap.caption = 'Flood Depth'
             colormap.add_to(m)
-
-             st_folium(m)
+            st_folium(m)
     except Exception as e:
         st.error(f"Error displaying flood map: {e}")
 
