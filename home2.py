@@ -1,7 +1,7 @@
 # app/Home.py
 import streamlit as st
 import folium
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 from folium.plugins import Draw
 import pandas as pd
 import numpy as np
