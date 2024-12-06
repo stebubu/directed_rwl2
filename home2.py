@@ -102,7 +102,7 @@ def display_rainfall_map(geotiff_path):
             norm = colors.Normalize(vmin = vmin, vmax = vmax)
             cmap = cm.get_cmap('Blues')
             rgba_image = cmap(norm(rainfall_data))
-            rgba_image[rainfall_data = = 0] = [0, 0, 0, 0]
+            rgba_image[rainfall_data == 0] = [0, 0, 0, 0]
 
             m = folium.Map(location = [(bounds.bottom + bounds.top) / 2, (bounds.left + bounds.right) / 2], zoom_start = 10)
             folium.raster_layers.ImageOverlay(
@@ -151,7 +151,7 @@ def generate_flood_map(geotiff_path):
 
     # Make the API request
     response = requests.post(url, json = body)
-    if response.status_code = = 200:
+    if response.status_code == 200:
         st.write("Flood map generated successfully.")
     else:
         st.error(f"Flood map generation failed: {response.text}")
@@ -163,7 +163,7 @@ def generate_flood_map(geotiff_path):
 
     try:
         response = requests.get(download_url)
-        if response.status_code = = 200:
+        if response.status_code == 200:
             with open(output_local_path, "wb") as f:
                 f.write(response.content)
             st.success("Downloaded flood map successfully.")
@@ -186,7 +186,7 @@ def display_flood_map(flood_map_path):
             norm = colors.Normalize(vmin = vmin, vmax = vmax)
             cmap = cm.get_cmap('Blues')
             rgba_image = cmap(norm(flood_data))
-            rgba_image[flood_data = = 0] = [0, 0, 0, 0]
+            rgba_image[flood_data == 0] = [0, 0, 0, 0]
 
             m = folium.Map(location = [(bounds.bottom + bounds.top) / 2, (bounds.left + bounds.right) / 2], zoom_start = 10)
             folium.raster_layers.ImageOverlay(
@@ -394,7 +394,7 @@ def fetch_acc_rain_data(start_time, end_time):
 
         response = requests.get("https://api.hypermeteo.com/b2b-binary/ogc/geoserver/wcs", headers = headers, params = params)
         
-        if response.status_code = = 200:
+        if response.status_code == 200:
             tmp_file = tempfile.NamedTemporaryFile(delete = False, suffix = '.nc')
             tmp_file.write(response.content)
             temp_files.append(tmp_file.name)
@@ -494,7 +494,7 @@ def display_cog_with_folium(cog_path):
         norm = colors.Normalize(vmin = vmin, vmax = vmax)
         cmap = cm.get_cmap('Blues')
         rgba_image = cmap(norm(band1))
-        rgba_image[band1 = = 0] = [0, 0, 0, 0]
+        rgba_image[band1 == 0] = [0, 0, 0, 0]
 
         m = folium.Map(location = [(bounds.bottom + bounds.top) / 2, (bounds.left + bounds.right) / 2], zoom_start = 10, tiles = "cartodbdark_matter")
         folium.raster_layers.ImageOverlay(
@@ -514,7 +514,7 @@ def display_cog_with_folium(cog_path):
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Select a page:", ["Realtime Pluvial", "Forecast Pluvial", "Coastal Flooding Forecast", "Coastal NowCasting"])
 
-if page = = "Realtime Pluvial":
+if page == "Realtime Pluvial":
     st.title("Realtime Pluvial Dashboard")
 
     # Initialize session state for geotiff_path and flood_map_path
@@ -584,7 +584,7 @@ if page = = "Realtime Pluvial":
     with col3:
         create_time_series(selected_date, selected_point_id)
 
-    elif page = = "Forecast Pluvial":
+    elif page == "Forecast Pluvial":
     st.title("Forecast Pluvial")
     
     scenario = st.selectbox(
@@ -608,7 +608,7 @@ if page = = "Realtime Pluvial":
     with col3:
         create_time_series(selected_date, selected_point_id)
 
-    elif page = = "Coastal Flooding Forecast":
+    elif page == "Coastal Flooding Forecast":
     st.title("Coastal Flooding Forecast")
     
     col1, col2, col3 = st.columns([1, 2, 2])
@@ -623,7 +623,7 @@ if page = = "Realtime Pluvial":
     with col3:
         create_time_series(selected_date, selected_point_id)
 
-    elif page = = "Coastal NowCasting":
+    elif page == "Coastal NowCasting":
     st.title("Coastal NowCasting")
     
     col1, col2, col3 = st.columns([1, 2, 2])
