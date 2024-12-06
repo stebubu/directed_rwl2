@@ -492,12 +492,16 @@ page = st.sidebar.radio("Select a page:", ["Realtime Pluvial", "Forecast Pluvial
 if page == "Realtime Pluvial":
     st.title("Realtime Pluvial Dashboard")
 
-    # Initialize geotiff_path
-    geotiff_path = None
-        # Time selection and fetch rain data
-    selected_date = st.sidebar.date_input("Select date", datetime.utcnow().date())
-    selected_hour = st.sidebar.selectbox("Select hour (UTC)", options=range(24), index=datetime.utcnow().hour)
-    selected_minute = st.sidebar.select_slider("Select minute", options=list(range(0, 60, 5)), value=(datetime.utcnow().minute // 5) * 5)
+    # Initialize session state for geotiff_path and flood_map_path
+    if "geotiff_path" not in st.session_state:
+        st.session_state.geotiff_path = None
+    if "flood_map_path" not in st.session_state:
+        st.session_state.flood_map_path = None
+
+    # Time selection
+    selected_date = st.sidebar.date_input("Select date", datetime.now(timezone.utc).date())
+    selected_hour = st.sidebar.selectbox("Select hour (UTC)", options=range(24), index=datetime.now(timezone.utc).hour)
+    selected_minute = st.sidebar.select_slider("Select minute", options=list(range(0, 60, 5)), value=(datetime.now(timezone.utc).minute // 5) * 5)
     selected_time = datetime.combine(selected_date, datetime.min.time()) + timedelta(hours=selected_hour, minutes=selected_minute)
     cumulative_options = {
         "No Cumulative": timedelta(minutes=5),
@@ -516,45 +520,45 @@ if page == "Realtime Pluvial":
 
     # Button to generate rainfall map
     if st.sidebar.button("Generate Rainfall Map"):
-        geotiff_path = generate_rainfall_map(selected_modality, start_time, end_time)
-        if geotiff_path:
-            display_rainfall_map(geotiff_path)
-    
-    # Fetch rain data
-    #rain_data = fetch_acc_rain_data(start_time, end_time)
-    #geotiff_path = convert_accumulated_rain_to_geotiff(rain_data)
-    if geotiff_path:
-        cog_path = convert_to_cog(geotiff_path)
-        display_cog_with_folium(cog_path)
-        with open(cog_path, "rb") as file:
-            st.download_button("Download COG", file, "rainrate_cog.tif", "image/tiff")
-    else:
-        st.error("Failed to create GeoTIFF.")
+        st.session_state.geotiff_path = generate_rainfall_map(selected_modality, start_time, end_time)
+
+    # Display rainfall map if it exists
+    if st.session_state.geotiff_path:
+        display_rainfall_map(st.session_state.geotiff_path)
+
     # Generate flood map button
     if st.button("Generate Flood Map"):
-        geotiff_path = "/path/to/local/geotiff.tif"  # Replace with actual path or use generated geotiff from previous steps
-        flood_map_path = generate_flood_map(geotiff_path)
-        if flood_map_path:
-            display_flood_map(flood_map_path)
-    
+        if st.session_state.geotiff_path:
+            st.session_state.flood_map_path = generate_flood_map(st.session_state.geotiff_path)
+
+    # Display flood map if it exists
+    if st.session_state.flood_map_path:
+        display_flood_map(st.session_state.flood_map_path)
+
+    # Scenario selection
     scenario = st.selectbox(
         "Select a cumulative rainfall scenario:",
         options=["1h", "3h", "6h", "12h"],
         index=0
     )
-    
     radar_intensity = 1.0 + 0.5 * ["1h", "3h", "6h", "12h"].index(scenario)
     flood_intensity = 0.5 + 0.3 * ["1h", "3h", "6h", "12h"].index(scenario)
 
+    # Layout with map and time series
     col1, col2, col3 = st.columns([1, 2, 2])
     with col1:
         selected_date = create_date_slider(datetime(2020, 1, 1), datetime(2024, 12, 31))
         point_selection = st.selectbox("Select a point to view time series:", [f"Point {i+1}" for i in range(len(random_points))], index=0)
         selected_point_id = int(point_selection.split()[1])
-        
+
     with col2:
-        create_map_viewer_with_barrier("Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity)
-        
+        # Generate and display map only when explicitly required
+        if "map_data" not in st.session_state:
+            st.session_state.map_data = create_map_viewer_with_barrier(
+                "Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity
+            )
+        st_folium(st.session_state.map_data)
+
     with col3:
         create_time_series(selected_date, selected_point_id)
 
