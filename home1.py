@@ -6,7 +6,7 @@ from folium.plugins import Draw
 import pandas as pd
 import numpy as np
 import plotly.express as px
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 import requests
 import tempfile
