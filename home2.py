@@ -168,6 +168,8 @@ def generate_flood_map(geotiff_path):
                 f.write(response.content)
             st.success("Downloaded flood map successfully.")
             return output_local_path
+    except Exception as e:
+        st.error(f'Error occurred: {e}')
     else:
             st.error(f"Failed to download flood map: {response.status_code}")
             return None
@@ -406,12 +408,16 @@ def fetch_acc_rain_data(start_time, end_time):
                 if rain is not None:
                     if accumulated_rain is None:
                         accumulated_rain = rain
+    except Exception as e:
+        st.error(f'Error occurred: {e}')
     else:
                         accumulated_rain, rain = xr.align(accumulated_rain, rain, join = 'outer')
                         accumulated_rain = accumulated_rain + rain.fillna(0)
                 ds.close()
             except Exception as e:
                 st.error(f"Failed to open dataset: {e}")
+    except Exception as e:
+        st.error(f'Error occurred: {e}')
     else:
             st.error(f"Error fetching data for {current_time}: {response.text}")
             break
