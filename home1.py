@@ -1,7 +1,7 @@
 # app/Home.py
 import streamlit as st
 import folium
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
 from folium.plugins import Draw
 import pandas as pd
 import numpy as np
@@ -23,6 +23,7 @@ import os
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 import hashlib
+from matplotlib import colormaps
 st.set_page_config(
     page_title="Geospatial Analysis Dashboard",
     page_icon="🌍",
@@ -180,7 +181,7 @@ def display_flood_map(flood_map_path):
             vmin, vmax = flood_data.min(), flood_data.max()
 
             norm = colors.Normalize(vmin=vmin, vmax=vmax)
-            cmap = cm.get_cmap('Blues')
+            cmap = colormaps.get_cmap('Blues')
             rgba_image = cmap(norm(flood_data))
             rgba_image[flood_data == 0] = [0, 0, 0, 0]
 
@@ -203,7 +204,7 @@ def display_flood_map(flood_map_path):
 
 # Function to create a date slider with specific ranges
 def create_date_slider(start, end):
-    dates = pd.date_range(start=start, end=end, freq='H')
+    dates = pd.date_range(start=start, end=end, freq='h')
     selected_date = st.select_slider(
         "Select a forecast time",
         options=dates,
@@ -298,7 +299,7 @@ def create_map_viewer_with_barrier(radar_name, radar_intensity, flood_name, floo
 
 def create_time_series(selected_date, point_id):
     # Generate data for the selected date with 15-minute intervals
-    dates = pd.date_range(start=selected_date, end=selected_date + timedelta(days=1), freq='15T')
+    dates = pd.date_range(start=selected_date, end=selected_date + timedelta(days=1), freq='15min')
     values = np.random.uniform(0, 10, size=len(dates))  # Random rainfall intensity in mm
     df = pd.DataFrame({
         'Date': dates,
@@ -467,7 +468,7 @@ def display_cog_with_folium(cog_path):
         vmin = np.min(band1[band1 > 0]) if np.any(band1 > 0) else 0
         vmax = np.max(band1)
         norm = colors.Normalize(vmin=vmin, vmax=vmax)
-        cmap = cm.get_cmap('Blues')
+        cmap = colormaps.get_cmap('Blues')
         rgba_image = cmap(norm(band1))
         rgba_image[band1 == 0] = [0, 0, 0, 0]
 
@@ -495,9 +496,9 @@ if page == "Realtime Pluvial":
     # Initialize geotiff_path
     geotiff_path = None
         # Time selection and fetch rain data
-    selected_date = st.sidebar.date_input("Select date", datetime.utcnow().date())
-    selected_hour = st.sidebar.selectbox("Select hour (UTC)", options=range(24), index=datetime.utcnow().hour)
-    selected_minute = st.sidebar.select_slider("Select minute", options=list(range(0, 60, 5)), value=(datetime.utcnow().minute // 5) * 5)
+    selected_date = st.sidebar.date_input("Select date", datetime.now(timezone.utc).date())
+    selected_hour = st.sidebar.selectbox("Select hour (UTC)", options=range(24), index=datetime.now(timezone.utc).hour)
+    selected_minute = st.sidebar.select_slider("Select minute", options=list(range(0, 60, 5)), value=(datetime.now(timezone.utc).minute // 5) * 5)
     selected_time = datetime.combine(selected_date, datetime.min.time()) + timedelta(hours=selected_hour, minutes=selected_minute)
     cumulative_options = {
         "No Cumulative": timedelta(minutes=5),
