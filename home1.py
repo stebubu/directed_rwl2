@@ -225,65 +225,70 @@ def create_map_viewer_with_barrier(radar_name, radar_intensity, flood_name, floo
     if "map_data" not in st.session_state:
         st.session_state.map_data = None
 
-    # Create map only if not already cached or if a button is clicked
+    # Generate map only if button is clicked
     if st.sidebar.button(f"Generate {radar_name} and {flood_name} Map"):
-        # Set up map centered on Rimini with Google Satellite view
-        m = folium.Map(
-            location=[44.0633, 12.5808],  # Rimini center coordinates
-            zoom_start=13,
-            tiles="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-            attr="Google"
-        )
+        try:
+            # Set up map centered on Rimini with Google Satellite view
+            m = folium.Map(
+                location=[44.0633, 12.5808],  # Rimini center coordinates
+                zoom_start=13,
+                tiles="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+                attr="Google"
+            )
 
-        # Define bounds for overlays
-        bounds = [[43.8, 12.4], [44.2, 12.9]]
+            # Define bounds for overlays
+            bounds = [[43.8, 12.4], [44.2, 12.9]]
 
-        # Generate radar data and overlay
-        radar_data = np.random.random((100, 100)) * radar_intensity  # Simulated data
-        folium.raster_layers.ImageOverlay(
-            radar_data,
-            bounds=bounds,
-            colormap=lambda x: (0, 0, 1, x),  # Blue for radar intensity
-            name=radar_name
-        ).add_to(m)
-
-        # Generate flood data and overlay if a button is clicked
-        flood_data = np.random.random((100, 100)) * flood_intensity  # Simulated data
-        folium.raster_layers.ImageOverlay(
-            flood_data,
-            bounds=bounds,
-            colormap=lambda x: (1, 0, 0, x),  # Red for flood areas
-            name=flood_name
-        ).add_to(m)
-
-        # Add static random points with labels
-        random_points = [(44.05, 12.6), (44.07, 12.62), (44.09, 12.58)]  # Sample points
-        for i, (lat, lon) in enumerate(random_points):
-            folium.Marker(
-                location=[lat, lon],
-                popup=f"Point {i+1}",
-                tooltip=f"Click to select Point {i+1}"
+            # Generate radar data and overlay
+            radar_data = np.random.random((100, 100)) * radar_intensity  # Simulated data
+            folium.raster_layers.ImageOverlay(
+                image=radar_data,
+                bounds=bounds,
+                colormap=lambda x: (0, 0, 1, x),  # Blue for radar intensity
+                name=radar_name
             ).add_to(m)
 
-        # Add an editable polyline barrier with the Draw plugin
-        draw = Draw(
-            draw_options={
-                'polyline': {'shapeOptions': {'color': 'red'}},
-                'polygon': False,
-                'rectangle': False,
-                'circle': False,
-                'marker': False,
-                'circlemarker': False
-            },
-            edit_options={'edit': True}
-        )
-        draw.add_to(m)
+            # Generate flood data and overlay
+            flood_data = np.random.random((100, 100)) * flood_intensity  # Simulated data
+            folium.raster_layers.ImageOverlay(
+                image=flood_data,
+                bounds=bounds,
+                colormap=lambda x: (1, 0, 0, x),  # Red for flood areas
+                name=flood_name
+            ).add_to(m)
 
-        # Add a layer control
-        folium.LayerControl().add_to(m)
+            # Add static random points with labels
+            random_points = [(44.05, 12.6), (44.07, 12.62), (44.09, 12.58)]  # Sample points
+            for i, (lat, lon) in enumerate(random_points):
+                folium.Marker(
+                    location=[lat, lon],
+                    popup=f"Point {i+1}",
+                    tooltip=f"Click to select Point {i+1}"
+                ).add_to(m)
 
-        # Cache the map in session state
-        st.session_state.map_data = m
+            # Add an editable polyline barrier with the Draw plugin
+            draw = Draw(
+                draw_options={
+                    'polyline': {'shapeOptions': {'color': 'red'}},
+                    'polygon': False,
+                    'rectangle': False,
+                    'circle': False,
+                    'marker': False,
+                    'circlemarker': False
+                },
+                edit_options={'edit': True}
+            )
+            draw.add_to(m)
+
+            # Add a layer control
+            folium.LayerControl().add_to(m)
+
+            # Cache the map in session state
+            st.session_state.map_data = m
+            st.success("Map generated successfully!")
+
+        except Exception as e:
+            st.error(f"Error generating the map: {e}")
 
     # Display the cached map
     if st.session_state.map_data:
@@ -573,11 +578,8 @@ if page == "Realtime Pluvial":
 
     with col2:
         # Generate and display map only when explicitly required
-        if "map_data" not in st.session_state:
-            st.session_state.map_data = create_map_viewer_with_barrier(
-                "Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity
-            )
-        st_folium(st.session_state.map_data)
+            # Call the function to create and display the map
+        create_map_viewer_with_barrier("Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity)
 
     with col3:
         create_time_series(selected_date, selected_point_id)
