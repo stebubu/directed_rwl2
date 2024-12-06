@@ -236,15 +236,14 @@ def create_map_viewer_with_barrier(radar_name, radar_intensity, flood_name, floo
         name=radar_name
     ).add_to(m)
 
-    # Optional: Add flood overlay with specified intensity if button is clicked
-    if st.button(f"Generate {flood_name} Overlay"):
-        flood_data = generate_random_geotiff_data(shape=(100, 100), intensity=flood_intensity)
-        folium.raster_layers.ImageOverlay(
-            flood_data,
-            bounds=bounds,
-            colormap=lambda x: (1, 0, 0, x),
-            name=flood_name
-        ).add_to(m)
+    # Add flood overlay with specified intensity
+    flood_data = generate_random_geotiff_data(shape=(100, 100), intensity=flood_intensity)
+    folium.raster_layers.ImageOverlay(
+        flood_data,
+        bounds=bounds,
+        colormap=lambda x: (1, 0, 0, x),
+        name=flood_name
+    ).add_to(m)
 
     # Add static random points to the map with labels
     for i, (lat, lon) in enumerate(random_points):
@@ -592,7 +591,15 @@ elif page == "Coastal Flooding Forecast":
         selected_point_id = int(point_selection.split()[1])
         
     with col2:
-        create_map_viewer_with_barrier("SEA Model Forecast", radar_intensity=2.0, flood_name="Coastal Flood Simulation", flood_intensity=1.2)
+        # Button to trigger map creation
+        if st.button("Generate Map with Overlays"):
+            create_map_viewer_with_barrier(
+                radar_name="Radar Rainfall Intensity",
+                radar_intensity=50,
+                flood_name="Flood Area",
+                flood_intensity=30
+            )
+        #create_map_viewer_with_barrier("SEA Model Forecast", radar_intensity=2.0, flood_name="Coastal Flood Simulation", flood_intensity=1.2)
         
     with col3:
         create_time_series(selected_date, selected_point_id)
