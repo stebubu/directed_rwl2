@@ -112,7 +112,7 @@ def display_rainfall_map(geotiff_path):
             colormap.caption = 'Rainfall Intensity (mm)'
             colormap.add_to(m)
 
-            folium_static(m)
+            st_folium(m)
     except Exception as e:
         st.error(f"Error displaying rainfall map: {e}")
 
@@ -196,7 +196,7 @@ def display_flood_map(flood_map_path):
             colormap.caption = 'Flood Depth'
             colormap.add_to(m)
 
-            folium_static(m)
+             st_folium(m)
     except Exception as e:
         st.error(f"Error displaying flood map: {e}")
 
@@ -270,7 +270,7 @@ def create_map_viewer_with_barrier(radar_name, radar_intensity, flood_name, floo
     draw.add_to(m)
 
     folium.LayerControl().add_to(m)
-    folium_static(m)
+    st_folium(m)
 
 # Function to create time series plot for a specific point
 '''def create_time_series(selected_date, point_id):
@@ -484,7 +484,7 @@ def display_cog_with_folium(cog_path):
         colormap.caption = 'Rainfall Intensity'
         colormap.add_to(m)
 
-        folium_static(m)
+        st_folium(m)
 
 # Main navigation
 st.sidebar.title("Navigation")
