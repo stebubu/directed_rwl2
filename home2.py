@@ -726,7 +726,7 @@ if page == "Realtime Pluvial":
 
 
     # Fetch and plot data upon button click
-    if st.button("Fetch and Plot Data"):
+    if st.sidebar.button("Fetch and Plot Data"):
         with st.spinner("Fetching data..."):
             filtered_results = fetch_and_filter_data(url, variable_key, lat_range, lon_range)
     
