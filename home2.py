@@ -60,33 +60,48 @@ def s3_upload(local_file, s3_file, bucket_name="s3-directed"):
 # New function to generate rainfall map based on selected modality
 def generate_rainfall_map(modality, start_time, end_time):
     st.write(f"Generating rainfall intensity map using {modality} method...")
-    
-    # Simulate data generation based on modality
-    data = np.random.random((100, 100)) * 10  # Simulated rainfall intensity in mm
-    lat_min, lat_max = 43.8, 44.2
-    lon_min, lon_max = 12.4, 12.9
-    cell_size_lon = (lon_max - lon_min) / data.shape[1]
-    cell_size_lat = (lat_max - lat_min) / data.shape[0]
 
-    # Create a temporary GeoTIFF file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".tif") as tmp_file:
-        transform = from_origin(lon_min, lat_max, cell_size_lon, abs(cell_size_lat))
-        with rasterio.open(
-            tmp_file.name,
-            'w',
-            driver='GTiff',
-            height=data.shape[0],
-            width=data.shape[1],
-            count=1,
-            dtype=rasterio.float32,
-            crs='EPSG:4326',
-            transform=transform
-        ) as dst:
-            dst.write(data.astype(rasterio.float32), 1)
-        geotiff_path = tmp_file.name
-        st.success(f"Rainfall intensity map generated: {geotiff_path}")
-        return geotiff_path
+    if modality == "HERA":
+        # Fetch HERA radar data
+        accumulated_rain = fetch_acc_rain_data(start_time, end_time)
+        if accumulated_rain is None:
+            st.error("No data retrieved from HERA radar.")
+            return None
 
+        # Process accumulated rain to GeoTIFF
+        geotiff_path = convert_accumulated_rain_to_geotiff(accumulated_rain)
+        if geotiff_path:
+            st.success(f"HERA rainfall intensity map generated: {geotiff_path}")
+            return geotiff_path
+        else:
+            st.error("Failed to generate GeoTIFF from HERA data.")
+            return None
+    else:
+        # Simulate data generation for other modalities
+        data = np.random.random((100, 100)) * 10  # Simulated rainfall intensity in mm
+        lat_min, lat_max = 43.8, 44.2
+        lon_min, lon_max = 12.4, 12.9
+        cell_size_lon = (lon_max - lon_min) / data.shape[1]
+        cell_size_lat = (lat_max - lat_min) / data.shape[0]
+
+        # Create a temporary GeoTIFF file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".tif") as tmp_file:
+            transform = from_origin(lon_min, lat_max, cell_size_lon, abs(cell_size_lat))
+            with rasterio.open(
+                tmp_file.name,
+                'w',
+                driver='GTiff',
+                height=data.shape[0],
+                width=data.shape[1],
+                count=1,
+                dtype=rasterio.float32,
+                crs='EPSG:4326',
+                transform=transform
+            ) as dst:
+                dst.write(data.astype(rasterio.float32), 1)
+            geotiff_path = tmp_file.name
+            st.success(f"Rainfall intensity map generated for {modality}: {geotiff_path}")
+            return geotiff_path
 # Function to display the generated rainfall map using Folium
 def display_rainfall_map(geotiff_path):
     try:
