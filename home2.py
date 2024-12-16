@@ -658,7 +658,7 @@ if page == "Realtime Pluvial":
         if flood_cog_path:
             # Display the COG map
             st.info(flood_cog_path)
-            #display_cog_with_folium(flood_cog_path)
+            display_cog_with_folium(flood_cog_path)
             # Add a download button for the COG file
             with open(flood_cog_path, "rb") as file:
                 st.download_button("Download COG FLOOD", file, "flood_cog.tif", "image/tiff")
@@ -670,8 +670,8 @@ if page == "Realtime Pluvial":
   
     
     # Display the combined map with slider if both maps are generated
-    if "geotiff_path" in st.session_state and "flood_map_path" in st.session_state:
-        display_combined_map_with_slider(st.session_state.geotiff_path, st.session_state.flood_map_path)
+    #if "geotiff_path" in st.session_state and "flood_map_path" in st.session_state:
+        #display_combined_map_with_slider(st.session_state.geotiff_path, st.session_state.flood_map_path)
 
     
 
