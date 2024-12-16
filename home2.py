@@ -597,10 +597,10 @@ if page == "Realtime Pluvial":
                 flood_name="Flood Area",
                 flood_intensity=30
             )
-        #create_map_viewer_with_barrier("Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity)'''
+        #create_map_viewer_with_barrier("Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity)
         
     with col3:
-        create_time_series(selected_date, selected_point_id)
+        create_time_series(selected_date, selected_point_id)'''
 
 elif page == "Forecast Pluvial":
     st.title("Forecast Pluvial")
