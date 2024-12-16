@@ -539,27 +539,34 @@ if page == "Realtime Pluvial":
 
     # Button to generate rainfall map
    # Button to generate rainfall map
+# Button to generate rainfall map
 if st.sidebar.button("Generate Rainfall Map"):
+    # Generate rainfall map and store in session state
     geotiff_path = generate_rainfall_map(selected_modality, start_time, end_time)
-    
     if geotiff_path:
-        # Display the generated rainfall map
-        #display_rainfall_map(geotiff_path)
-
-        # Convert the GeoTIFF to COG format
-        cog_path = convert_to_cog(geotiff_path)
-        
-        if cog_path:
-            # Display the COG map
-            display_cog_with_folium(cog_path)
-            
-            # Add a download button for the COG file
-            with open(cog_path, "rb") as file:
-                st.download_button("Download COG", file, "rainrate_cog.tif", "image/tiff")
-        else:
-            st.error("Failed to create COG.")
+        st.session_state.geotiff_path = geotiff_path  # Store in session state
+        st.success("Rainfall map generated successfully!")
     else:
         st.error("Failed to generate GeoTIFF.")
+
+# Check if a rainfall map already exists in session state
+if "geotiff_path" in st.session_state and st.session_state.geotiff_path:
+    # Display the rainfall map
+    display_rainfall_map(st.session_state.geotiff_path)
+
+    # Convert to COG format
+    cog_path = convert_to_cog(st.session_state.geotiff_path)
+    if cog_path:
+        # Display the COG map
+        display_cog_with_folium(cog_path)
+
+        # Add a download button for the COG file
+        with open(cog_path, "rb") as file:
+            st.download_button("Download COG", file, "rainrate_cog.tif", "image/tiff")
+    else:
+        st.error("Failed to create COG.")
+else:
+    st.info("Click 'Generate Rainfall Map' to create a map.")
     # Generate flood map button
     if st.button("Generate Flood Map"):
         geotiff_path = "/path/to/local/geotiff.tif"  # Replace with actual path or use generated geotiff from previous steps
