@@ -611,8 +611,8 @@ if page == "Realtime Pluvial":
     # Button to generate rainfall map
    # Button to generate rainfall map
 # Button to generate rainfall map
-'''
-    if st.sidebar.button("Generate Rainfall Map"):
+
+#    if st.sidebar.button("Generate Rainfall Map"):
         # Generate rainfall map and store in session state
         geotiff_path = generate_rainfall_map(selected_modality, start_time, end_time)
         if geotiff_path:
@@ -624,14 +624,14 @@ if page == "Realtime Pluvial":
     # Check if a rainfall map already exists in session state
     if "geotiff_path" in st.session_state and st.session_state.geotiff_path:
         # Display the rainfall map
-        display_rainfall_map(st.session_state.geotiff_path)
+        #display_rainfall_map(st.session_state.geotiff_path)
     
         # Convert to COG format
         cog_path = convert_to_cog(st.session_state.geotiff_path)
         if cog_path:
             # Display the COG map
             st.info(cog_path)
-            display_cog_with_folium(cog_path)
+            #display_cog_with_folium(cog_path)
     
             # Add a download button for the COG file
             with open(cog_path, "rb") as file:
@@ -665,19 +665,9 @@ if page == "Realtime Pluvial":
         else:
             st.error("Failed to create COG.")
     else:
-        st.info("Click 'Generate Flood Map' to create a map.")'''
+        st.info("Click 'Generate Flood Map' to create a map.")
 
-        # Use the combined map function in your workflow
-    if st.sidebar.button("Generate Rainfall Map"):
-        geotiff_path = generate_rainfall_map(selected_modality, start_time, end_time)
-        if geotiff_path:
-            st.session_state.geotiff_path = geotiff_path
-    
-    if st.sidebar.button("Generate Flood Map"):
-        if "geotiff_path" in st.session_state:
-            flood_map_path = generate_flood_map(st.session_state.geotiff_path)
-            if flood_map_path:
-                st.session_state.flood_map_path = flood_map_path
+  
     
     # Display the combined map with slider if both maps are generated
     if "geotiff_path" in st.session_state and "flood_map_path" in st.session_state:
