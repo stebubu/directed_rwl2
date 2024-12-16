@@ -541,7 +541,8 @@ if page == "Realtime Pluvial":
     if st.sidebar.button("Generate Rainfall Map"):
         geotiff_path = generate_rainfall_map(selected_modality, start_time, end_time)
         if geotiff_path:
-            display_rainfall_map(geotiff_path)
+            #display_rainfall_map(geotiff_path)
+            
     
     # Fetch rain data
     #rain_data = fetch_acc_rain_data(start_time, end_time)
