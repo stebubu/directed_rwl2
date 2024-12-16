@@ -459,30 +459,39 @@ def convert_to_cog(geotiff_path):
 
 # Display COG using Folium
 def display_cog_with_folium(cog_path):
-    with rasterio.open(cog_path) as src:
-        bounds = src.bounds
-        band1 = src.read(1)
+    try:
+        import matplotlib
+        if hasattr(matplotlib, 'colormaps'):  # For matplotlib >= 3.7.0
+            cmap = matplotlib.colormaps['Blues']
+        else:  # For older versions
+            import matplotlib.pyplot as plt
+            cmap = plt.get_cmap('Blues')
 
-        vmin = np.min(band1[band1 > 0]) if np.any(band1 > 0) else 0
-        vmax = np.max(band1)
-        norm = colors.Normalize(vmin=vmin, vmax=vmax)
-        cmap = colormaps.get_cmap('Blues')
-        rgba_image = cmap(norm(band1))
-        rgba_image[band1 == 0] = [0, 0, 0, 0]
+        with rasterio.open(cog_path) as src:
+            bounds = src.bounds
+            band1 = src.read(1)
 
-        m = folium.Map(location=[(bounds.bottom + bounds.top) / 2, (bounds.left + bounds.right) / 2], zoom_start=10, tiles="cartodbdark_matter")
-        folium.raster_layers.ImageOverlay(
-            image=rgba_image,
-            bounds=[[bounds.bottom, bounds.left], [bounds.top, bounds.right]],
-            opacity=0.7,
-            interactive=True
-        ).add_to(m)
+            vmin = np.min(band1[band1 > 0]) if np.any(band1 > 0) else 0
+            vmax = np.max(band1)
+            norm = colors.Normalize(vmin=vmin, vmax=vmax)
+            rgba_image = cmap(norm(band1))
+            rgba_image[band1 == 0] = [0, 0, 0, 0]
 
-        colormap = linear.Blues_09.scale(vmin, vmax)
-        colormap.caption = 'Rainfall Intensity'
-        colormap.add_to(m)
+            m = folium.Map(location=[(bounds.bottom + bounds.top) / 2, (bounds.left + bounds.right) / 2], zoom_start=10, tiles="cartodbdark_matter")
+            folium.raster_layers.ImageOverlay(
+                image=rgba_image,
+                bounds=[[bounds.bottom, bounds.left], [bounds.top, bounds.right]],
+                opacity=0.7,
+                interactive=True
+            ).add_to(m)
 
-        st_folium(m)
+            colormap = linear.Blues_09.scale(vmin, vmax)
+            colormap.caption = 'Rainfall Intensity'
+            colormap.add_to(m)
+
+            st_folium(m)
+    except Exception as e:
+        st.error(f"Error displaying COG with Folium: {e}")
 
 # Main navigation
 st.sidebar.title("Navigation")
