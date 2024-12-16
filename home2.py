@@ -587,8 +587,14 @@ if page == "Realtime Pluvial":
         if flood_cog_path:
             # Display the COG map
             st.info(flood_cog_path)
-            display_cog_with_folium(flood_cog_path)
-        
+            #display_cog_with_folium(flood_cog_path)
+            # Add a download button for the COG file
+            with open(flood_cog_path, "rb") as file:
+                st.download_button("Download COG FLOOD", file, "flood_cog.tif", "image/tiff")
+        else:
+            st.error("Failed to create COG.")
+    else:
+        st.info("Click 'Generate Flood Map' to create a map.")
 
     
 
