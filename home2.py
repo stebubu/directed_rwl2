@@ -602,6 +602,8 @@ if page == "Realtime Pluvial":
     with col3:
         create_time_series(selected_date, selected_point_id)'''
 
+
+
 elif page == "Forecast Pluvial":
     st.title("Forecast Pluvial")
     
