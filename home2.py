@@ -631,7 +631,7 @@ if page == "Realtime Pluvial":
         if cog_path:
             # Display the COG map
             st.info(cog_path)
-            #display_cog_with_folium(cog_path)
+            display_cog_with_folium(cog_path)
     
             # Add a download button for the COG file
             with open(cog_path, "rb") as file:
@@ -658,7 +658,7 @@ if page == "Realtime Pluvial":
         if flood_cog_path:
             # Display the COG map
             st.info(flood_cog_path)
-            display_cog_with_folium(flood_cog_path)
+            #display_cog_with_folium(flood_cog_path) #troppo pesante nn riesce
             # Add a download button for the COG file
             with open(flood_cog_path, "rb") as file:
                 st.download_button("Download COG FLOOD", file, "flood_cog.tif", "image/tiff")
