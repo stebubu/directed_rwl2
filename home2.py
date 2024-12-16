@@ -574,33 +574,6 @@ if page == "Realtime Pluvial":
         if flood_map_path:
             display_flood_map(flood_map_path)
     
-'''    scenario = st.selectbox(
-        "Select a cumulative rainfall scenario:",
-        options=["1h", "3h", "6h", "12h"],
-        index=0
-    )
-    
-    radar_intensity = 1.0 + 0.5 * ["1h", "3h", "6h", "12h"].index(scenario)
-    flood_intensity = 0.5 + 0.3 * ["1h", "3h", "6h", "12h"].index(scenario)
-
-    col1, col2, col3 = st.columns([1, 2, 2])
-    with col1:
-        selected_date = create_date_slider(datetime(2020, 1, 1), datetime(2024, 12, 31))
-        point_selection = st.selectbox("Select a point to view time series:", [f"Point {i+1}" for i in range(len(random_points))], index=0)
-        selected_point_id = int(point_selection.split()[1])
-        
-    with col2:
-        if st.button("Generate Map with Overlays"):
-            create_map_viewer_with_barrier(
-                radar_name="Radar Rainfall Intensity",
-                radar_intensity=50,
-                flood_name="Flood Area",
-                flood_intensity=30
-            )
-        #create_map_viewer_with_barrier("Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity)
-        
-    with col3:
-        create_time_series(selected_date, selected_point_id)'''
 
 
 
