@@ -544,7 +544,7 @@ if st.sidebar.button("Generate Rainfall Map"):
     
     if geotiff_path:
         # Display the generated rainfall map
-        display_rainfall_map(geotiff_path)
+        #display_rainfall_map(geotiff_path)
 
         # Convert the GeoTIFF to COG format
         cog_path = convert_to_cog(geotiff_path)
