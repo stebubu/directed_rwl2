@@ -46,6 +46,63 @@ aws_access_key_id = st.sidebar.text_input("AWS Access Key ID", type="password")
 aws_secret_access_key = st.sidebar.text_input("AWS Secret Access Key", type="password")
 aws_region = st.sidebar.text_input("AWS Region", value="us-east-1")
 
+# User inputs ARPAE JSON FETCH
+url = st.sidebar.text_input("Data URL", "https://dati-simc.arpae.it/opendata/osservati/meteo/realtime/realtime.jsonl")
+variable_key = st.sidebar.text_input("Variable Key", "B12101")
+lat_range = st.sidebar.slider("Latitude Range", 44.0, 46.0, (44.0, 44.5))
+lon_range = st.sidebar.slider("Longitude Range", 11.0, 13.0, (11.5, 12.0))
+
+
+# Define the data-fetching and filtering function
+def fetch_and_filter_data(url, variable_key, lat_range, lon_range):
+    try:
+        # Fetch data from URL
+        response = requests.get(url)
+        response.raise_for_status()
+        raw_data = response.text.splitlines()  # Split JSONL lines into a list
+        json_data = [json.loads(line) for line in raw_data]
+
+        # Define time range
+        now = datetime.utcnow()
+        eight_hours_ago = now - timedelta(hours=8)
+
+        filtered_data = []
+
+        # Process each JSON object
+        for entry in json_data:
+            timestamp = entry.get("date")
+            if not timestamp:
+                continue
+
+            # Parse timestamp and check time range
+            entry_time = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            if not (eight_hours_ago <= entry_time <= now):
+                continue
+
+            # Extract location and filter by lat/lon
+            lat = entry.get("lat") / 1e5  # Convert to proper latitude format
+            lon = entry.get("lon") / 1e5  # Convert to proper longitude format
+            if not (lat_range[0] <= lat <= lat_range[1] and lon_range[0] <= lon <= lon_range[1]):
+                continue
+
+            # Check for the variable in `data`
+            for record in entry.get("data", []):
+                vars_data = record.get("vars", {})
+                if variable_key in vars_data:
+                    filtered_data.append({
+                        "timestamp": timestamp,
+                        "lat": lat,
+                        "lon": lon,
+                        "value": vars_data[variable_key]["v"]
+                    })
+
+        return filtered_data
+
+    except Exception as e:
+        st.error(f"Error fetching or filtering data: {e}")
+        return []
+
+
 
 # Function to display both rainfall and flood maps on a single map with slider
 def display_combined_map_with_slider(rainfall_path, flood_path):
@@ -666,6 +723,31 @@ if page == "Realtime Pluvial":
             st.error("Failed to create COG.")
     else:
         st.info("Click 'Generate Flood Map' to create a map.")
+
+
+    # Fetch and plot data upon button click
+    if st.button("Fetch and Plot Data"):
+        with st.spinner("Fetching data..."):
+            filtered_results = fetch_and_filter_data(url, variable_key, lat_range, lon_range)
+    
+        if filtered_results:
+            # Convert to DataFrame for visualization
+            df = pd.DataFrame(filtered_results)
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
+    
+            # Plotting
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.plot(df['timestamp'], df['value'], marker='o', label=f"Variable: {variable_key}")
+            ax.set_xlabel("Timestamp")
+            ax.set_ylabel("Value")
+            ax.set_title("Time Series Plot")
+            ax.legend()
+            plt.xticks(rotation=45)
+    
+            st.pyplot(fig)
+        else:
+            st.warning("No data found for the specified filters.")
+
 
   
     
