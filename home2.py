@@ -558,6 +558,7 @@ if page == "Realtime Pluvial":
         cog_path = convert_to_cog(st.session_state.geotiff_path)
         if cog_path:
             # Display the COG map
+            st.info(cog_path)
             display_cog_with_folium(cog_path)
     
             # Add a download button for the COG file
@@ -570,7 +571,7 @@ if page == "Realtime Pluvial":
     # Generate flood map button
     if st.button("Generate Flood Map"):
         #geotiff_path = "/path/to/local/geotiff.tif"  # Replace with actual path or use generated geotiff from previous steps
-        flood_map_path = generate_flood_map(geotiff_path)
+        flood_map_path = generate_flood_map(cog_path)
         if flood_map_path:
             display_flood_map(flood_map_path)
     
