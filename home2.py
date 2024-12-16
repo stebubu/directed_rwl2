@@ -573,7 +573,22 @@ if page == "Realtime Pluvial":
         #geotiff_path = "/path/to/local/geotiff.tif"  # Replace with actual path or use generated geotiff from previous steps
         flood_map_path = generate_flood_map(cog_path)
         if flood_map_path:
-            display_flood_map(flood_map_path)
+            st.session_state.geotiff_path = flood_map_path  # Store in session state
+            st.success("Flood map generated successfully!")
+        else:
+            st.error("Failed to generate GeoTIFF.")
+    
+    # Check if a rainfall map already exists in session state
+    if "flood_map_path" in st.session_state and st.session_state.flood_map_path:
+        
+        # Convert to COG format
+        flood_cog_path = convert_to_cog(st.session_state.flood_map_path)
+        if flood_cog_path:
+            # Display the COG map
+            st.info(flood_cog_path)
+            display_cog_with_folium(flood_cog_path)
+        
+
     
 
 
