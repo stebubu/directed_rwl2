@@ -569,12 +569,12 @@ if page == "Realtime Pluvial":
         st.info("Click 'Generate Rainfall Map' to create a map.")
     # Generate flood map button
     if st.button("Generate Flood Map"):
-        geotiff_path = "/path/to/local/geotiff.tif"  # Replace with actual path or use generated geotiff from previous steps
+        #geotiff_path = "/path/to/local/geotiff.tif"  # Replace with actual path or use generated geotiff from previous steps
         flood_map_path = generate_flood_map(geotiff_path)
         if flood_map_path:
             display_flood_map(flood_map_path)
     
-    scenario = st.selectbox(
+'''    scenario = st.selectbox(
         "Select a cumulative rainfall scenario:",
         options=["1h", "3h", "6h", "12h"],
         index=0
@@ -597,7 +597,7 @@ if page == "Realtime Pluvial":
                 flood_name="Flood Area",
                 flood_intensity=30
             )
-        #create_map_viewer_with_barrier("Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity)
+        #create_map_viewer_with_barrier("Radar Rainfall Intensity", radar_intensity, "Flood Area", flood_intensity)'''
         
     with col3:
         create_time_series(selected_date, selected_point_id)
