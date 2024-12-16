@@ -570,7 +570,7 @@ if page == "Realtime Pluvial":
     else:
         st.info("Click 'Generate Rainfall Map' to create a map.")
     # Generate flood map button
-    if st.button("Generate Flood Map"):
+    if st.sidebar.button("Generate Flood Map"):
         #geotiff_path = "/path/to/local/geotiff.tif"  # Replace with actual path or use generated geotiff from previous steps
         flood_map_path = generate_flood_map(cog_path)
         if flood_map_path:
