@@ -540,11 +540,10 @@ if page == "Realtime Pluvial":
     # Button to generate rainfall map
    # Button to generate rainfall map
 # Button to generate rainfall map
-    if "geotiff_path" not in st.session_state:
-        st.session_state.geotiff_path = None
+
     if st.sidebar.button("Generate Rainfall Map"):
         # Generate rainfall map and store in session state
-        st.session_state.geotiff_path = generate_rainfall_map(selected_modality, start_time, end_time)
+        geotiff_path = generate_rainfall_map(selected_modality, start_time, end_time)
         if geotiff_path:
             st.session_state.geotiff_path = geotiff_path  # Store in session state
             st.success("Rainfall map generated successfully!")
