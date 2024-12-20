@@ -52,7 +52,7 @@ aws_region = st.sidebar.text_input("AWS Region", value="us-east-1")
 url = "https://dati-simc.arpae.it/opendata/osservati/meteo/realtime/realtime.jsonl"
 lat_range = (44.0, 44.5)
 lon_range = (11.5, 12.0)
-variable_key = "B12101"
+variable_key = "B13011"
 
 
 
