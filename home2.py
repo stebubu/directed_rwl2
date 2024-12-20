@@ -19,6 +19,8 @@ from rasterio.transform import from_origin
 from rasterio.enums import Resampling
 import xarray as xr
 import pytz
+from dateutil.parser import parse as parse_date
+
 from branca.colormap import linear
 from matplotlib import cm, colors
 import matplotlib.pyplot as plt
@@ -47,45 +49,56 @@ aws_secret_access_key = st.sidebar.text_input("AWS Secret Access Key", type="pas
 aws_region = st.sidebar.text_input("AWS Region", value="us-east-1")
 
 # User inputs ARPAE JSON FETCH
-url = st.sidebar.text_input("Data URL", "https://dati-simc.arpae.it/opendata/osservati/meteo/realtime/realtime.jsonl")
-variable_key = st.sidebar.text_input("Variable Key", "B12101")
-lat_range = st.sidebar.slider("Latitude Range", 44.0, 46.0, (44.0, 44.5))
-lon_range = st.sidebar.slider("Longitude Range", 11.0, 13.0, (11.5, 12.0))
+url = "https://dati-simc.arpae.it/opendata/osservati/meteo/realtime/realtime.jsonl"
+lat_range = (44.0, 44.5)
+lon_range = (11.5, 12.0)
+variable_key = "B12101"
 
 
-# Define the data-fetching and filtering function
-def fetch_and_filter_data(url, variable_key, lat_range, lon_range):
+
+
+
+
+
+def extract_data_from_location_and_variable(url, lat_range, lon_range, variable_key):
     try:
-        # Fetch data from URL
-        response = requests.get(url)
+        response = requests.get(url, timeout=30)
         response.raise_for_status()
-        raw_data = response.text.splitlines()  # Split JSONL lines into a list
-        json_data = [json.loads(line) for line in raw_data]
+        raw_data = response.text.splitlines()
 
-        # Define time range
-        now = datetime.utcnow()
+        # Get current time in UTC with timezone awareness
+        now = datetime.now(pytz.utc) 
         eight_hours_ago = now - timedelta(hours=8)
 
         filtered_data = []
 
-        # Process each JSON object
-        for entry in json_data:
+        for line in raw_data:
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
             timestamp = entry.get("date")
             if not timestamp:
                 continue
 
-            # Parse timestamp and check time range
-            entry_time = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            try:
+                # Make entry_time timezone aware, assuming UTC if no timezone is specified
+                entry_time = parse_date(timestamp).replace(tzinfo=pytz.utc)  
+            except ValueError:
+                continue
+
             if not (eight_hours_ago <= entry_time <= now):
                 continue
 
-            # Extract location and filter by lat/lon
-            lat = entry.get("lat") / 1e5  # Convert to proper latitude format
-            lon = entry.get("lon") / 1e5  # Convert to proper longitude format
+            lat = entry.get("lat") / 1e5 if "lat" in entry else None
+            lon = entry.get("lon") / 1e5 if "lon" in entry else None
+            if lat is None or lon is None:
+                continue
+
             if not (lat_range[0] <= lat <= lat_range[1] and lon_range[0] <= lon <= lon_range[1]):
                 continue
 
-            # Check for the variable in `data`
             for record in entry.get("data", []):
                 vars_data = record.get("vars", {})
                 if variable_key in vars_data:
@@ -98,8 +111,8 @@ def fetch_and_filter_data(url, variable_key, lat_range, lon_range):
 
         return filtered_data
 
-    except Exception as e:
-        st.error(f"Error fetching or filtering data: {e}")
+    except requests.exceptions.RequestException as e:
+        print(f"Request error: {e}")
         return []
 
 
@@ -728,7 +741,8 @@ if page == "Realtime Pluvial":
     # Fetch and plot data upon button click
     if st.sidebar.button("Fetch and Plot Data"):
         with st.spinner("Fetching data..."):
-            filtered_results = fetch_and_filter_data(url, variable_key, lat_range, lon_range)
+            
+            filtered_results = extract_data_from_location_and_variable(url, lat_range, lon_range, variable_key)
     
         if filtered_results:
             # Convert to DataFrame for visualization
