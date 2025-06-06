@@ -1,4 +1,10 @@
 # app/Home.py
+"""Streamlit dashboard for geospatial analysis.
+
+This module provides utilities to generate rainfall and flood maps,
+visualize them with Folium, and convert data to Cloud Optimized
+GeoTIFF format.
+"""
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
@@ -49,6 +55,17 @@ aws_region = st.sidebar.text_input("AWS Region", value="us-east-1")
 
 # Function to upload a file to S3
 def s3_upload(local_file, s3_file, bucket_name="s3-directed"):
+    """Upload a local file to an AWS S3 bucket.
+
+    Parameters
+    ----------
+    local_file : str
+        Path to the file on the local filesystem.
+    s3_file : str
+        Destination path within the S3 bucket.
+    bucket_name : str, optional
+        Name of the S3 bucket, by default "s3-directed".
+    """
     session = boto3.Session(
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
@@ -63,6 +80,22 @@ def s3_upload(local_file, s3_file, bucket_name="s3-directed"):
 
 # New function to generate rainfall map based on selected modality
 def generate_rainfall_map(modality, start_time, end_time):
+    """Generate a temporary rainfall intensity GeoTIFF."
+
+    Parameters
+    ----------
+    modality : str
+        Selected rainfall generation method.
+    start_time : datetime
+        Start of the accumulation period.
+    end_time : datetime
+        End of the accumulation period.
+
+    Returns
+    -------
+    str
+        Path to the generated GeoTIFF file.
+    """
     st.write(f"Generating rainfall intensity map using {modality} method...")
     
     # Simulate data generation based on modality
@@ -93,6 +126,13 @@ def generate_rainfall_map(modality, start_time, end_time):
 
 # Function to display the generated rainfall map using Folium
 def display_rainfall_map(geotiff_path):
+    """Display a rainfall map using Folium."
+
+    Parameters
+    ----------
+    geotiff_path : str
+        Path to the GeoTIFF containing rainfall data.
+    """
     try:
         with rasterio.open(geotiff_path) as src:
             bounds = src.bounds
@@ -124,6 +164,18 @@ def display_rainfall_map(geotiff_path):
 
 # Flood map generation function
 def generate_flood_map(geotiff_path):
+    """Run a remote process to create a flood depth map."
+
+    Parameters
+    ----------
+    geotiff_path : str
+        Path to the rainfall GeoTIFF uploaded to S3.
+
+    Returns
+    -------
+    str or None
+        Local path to the downloaded flood map if successful.
+    """
     # Define S3 paths
     s3_file = "Directed/Rimini/rain_radar_hera.tif"
     s3_bucket = "s3-directed"
@@ -177,6 +229,13 @@ def generate_flood_map(geotiff_path):
 
 # Function to display the flood map with Folium
 def display_flood_map(flood_map_path):
+    """Visualize a flood map as an overlay on a Folium map."
+
+    Parameters
+    ----------
+    flood_map_path : str
+        Local path to the GeoTIFF containing flood depths.
+    """
     try:
         with rasterio.open(flood_map_path) as src:
             bounds = src.bounds
@@ -207,6 +266,20 @@ def display_flood_map(flood_map_path):
 
 # Function to create a date slider with specific ranges
 def create_date_slider(start, end):
+    """Create a slider widget for selecting a datetime."
+
+    Parameters
+    ----------
+    start : datetime
+        Lower bound of the slider.
+    end : datetime
+        Upper bound of the slider.
+
+    Returns
+    -------
+    datetime
+        The datetime selected by the user.
+    """
     dates = pd.date_range(start=start, end=end, freq='H')
     selected_date = st.select_slider(
         "Select a forecast time",
@@ -217,10 +290,37 @@ def create_date_slider(start, end):
 
 # Function to generate random GeoTIFF-like data based on scenario
 def generate_random_geotiff_data(shape=(100, 100), intensity=1.0):
+    """Generate random GeoTIFF-like array data."
+
+    Parameters
+    ----------
+    shape : tuple, optional
+        Height and width of the raster.
+    intensity : float, optional
+        Scaling factor for the random values.
+
+    Returns
+    -------
+    ndarray
+        Array of random values simulating raster data.
+    """
     return np.random.random(shape) * intensity
 
 # Function to create map viewer with editable polyline
 def create_map_viewer_with_barrier(radar_name, radar_intensity, flood_name, flood_intensity):
+    """Create an interactive map with radar and flood overlays."
+
+    Parameters
+    ----------
+    radar_name : str
+        Name displayed for the radar layer.
+    radar_intensity : float
+        Scaling factor for random radar data.
+    flood_name : str
+        Name displayed for the flood layer.
+    flood_intensity : float
+        Scaling factor for random flood data.
+    """
     # Initialize session state for the map
     if "map_data" not in st.session_state:
         st.session_state.map_data = None
@@ -322,6 +422,15 @@ def create_map_viewer_with_barrier(radar_name, radar_intensity, flood_name, floo
 
 
 def create_time_series(selected_date, point_id):
+    """Plot rainfall intensity and cumulative rainfall for a point."
+
+    Parameters
+    ----------
+    selected_date : datetime
+        Date for which to generate the series.
+    point_id : int
+        Identifier of the selected point.
+    """
     # Generate data for the selected date with 15-minute intervals
     dates = pd.date_range(start=selected_date, end=selected_date + timedelta(days=1), freq='15T')
     values = np.random.uniform(0, 10, size=len(dates))  # Random rainfall intensity in mm
@@ -376,6 +485,20 @@ headers = {"Authorization": f"Bearer {token}"}
 
 # Fetch data from API and accumulate rain data
 def fetch_acc_rain_data(start_time, end_time):
+    """Fetch and accumulate rainfall data from the Hypermeteo API."
+
+    Parameters
+    ----------
+    start_time : datetime
+        Beginning of the accumulation period.
+    end_time : datetime
+        End of the accumulation period.
+
+    Returns
+    -------
+    xarray.DataArray or None
+        Accumulated rainfall over the requested period.
+    """
     current_time = start_time
     accumulated_rain = None
     temp_files = []
@@ -430,6 +553,18 @@ def fetch_acc_rain_data(start_time, end_time):
 
 # Convert accumulated rain to GeoTIFF
 def convert_accumulated_rain_to_geotiff(accumulated_rain):
+    """Convert accumulated rainfall data to a temporary GeoTIFF."
+
+    Parameters
+    ----------
+    accumulated_rain : xarray.DataArray
+        Array containing accumulated rainfall values.
+
+    Returns
+    -------
+    str or None
+        Path to the generated GeoTIFF file.
+    """
     if accumulated_rain is not None:
         rainrate = accumulated_rain.squeeze().values
 
@@ -464,6 +599,18 @@ def convert_accumulated_rain_to_geotiff(accumulated_rain):
 
 # Convert GeoTIFF to Cloud Optimized GeoTIFF (COG)
 def convert_to_cog(geotiff_path):
+    """Convert a GeoTIFF to Cloud Optimized GeoTIFF (COG) format."
+
+    Parameters
+    ----------
+    geotiff_path : str
+        Path to the input GeoTIFF file.
+
+    Returns
+    -------
+    str
+        Path to the generated COG file.
+    """
     cog_path = geotiff_path.replace(".tif", "_cog.tif")
     with rasterio.open(geotiff_path) as src:
         profile = src.profile.copy()
@@ -485,6 +632,13 @@ def convert_to_cog(geotiff_path):
 
 # Display COG using Folium
 def display_cog_with_folium(cog_path):
+    """Display a Cloud Optimized GeoTIFF on a Folium map."
+
+    Parameters
+    ----------
+    cog_path : str
+        Path to the COG file to display.
+    """
     with rasterio.open(cog_path) as src:
         bounds = src.bounds
         band1 = src.read(1)
