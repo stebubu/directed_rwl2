@@ -252,7 +252,7 @@ def display_rainfall_map(geotiff_path):
             vmin, vmax = rainfall_data.min(), rainfall_data.max()
 
             norm = colors.Normalize(vmin=vmin, vmax=vmax)
-            cmap = colormaps.get_cmap('Blues')
+            cmap = cm.get_cmap('Blues')
             rgba_image = cmap(norm(rainfall_data))
             rgba_image[rainfall_data == 0] = [0, 0, 0, 0]
 
@@ -336,7 +336,7 @@ def display_flood_map(flood_map_path):
             vmin, vmax = flood_data.min(), flood_data.max()
 
             norm = colors.Normalize(vmin=vmin, vmax=vmax)
-            cmap = colormaps.get_cmap('Blues')
+            cmap = cm.get_cmap('Blues')
             rgba_image = cmap(norm(flood_data))
             rgba_image[flood_data == 0] = [0, 0, 0, 0]
 
@@ -679,8 +679,6 @@ if page == "Realtime Pluvial":
     selected_modality = st.sidebar.radio("Select modality:", modalities)
 
     # Button to generate rainfall map
-   # Button to generate rainfall map
-# Button to generate rainfall map
     if st.sidebar.button("Generate Rainfall Map"):
        
         # Generate rainfall map and store in session state
